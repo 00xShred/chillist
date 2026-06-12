@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Chillist</string>
+    <string name="widget_description">A minimalist text list widget to launch your favorite apps.</string>
 </resources>
