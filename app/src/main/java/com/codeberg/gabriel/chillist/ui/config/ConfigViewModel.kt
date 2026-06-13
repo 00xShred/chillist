@@ -122,6 +122,24 @@ class ConfigViewModel(
         }
     }
 
+    fun updateShowDateTime(show: Boolean) {
+        viewModelScope.launch {
+            repository.updatePreferences { it.copy(showDateTime = show) }
+        }
+    }
+
+    fun updateShowSearch(show: Boolean) {
+        viewModelScope.launch {
+            repository.updatePreferences { it.copy(showSearch = show) }
+        }
+    }
+
+    fun updateShowApps(show: Boolean) {
+        viewModelScope.launch {
+            repository.updatePreferences { it.copy(showApps = show) }
+        }
+    }
+
     class Factory(
         private val context: Context
     ) : ViewModelProvider.Factory {

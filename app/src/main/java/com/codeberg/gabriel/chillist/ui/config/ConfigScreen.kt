@@ -38,11 +38,15 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -69,7 +73,10 @@ fun ConfigScreen(viewModel: ConfigViewModel) {
         onMoveDown = { viewModel.moveAppDown(it) },
         onRemove = { viewModel.removeApp(it) },
         onUpdateLabel = { pkg, label -> viewModel.updateAppLabel(pkg, label) },
-        onAppSelected = { viewModel.addApp(it) }
+        onAppSelected = { viewModel.addApp(it) },
+        onUpdateShowSearch = { viewModel.updateShowSearch(it) },
+        onUpdateShowApps = { viewModel.updateShowApps(it) },
+        onUpdateShowDateTime = { viewModel.updateShowDateTime(it) }
     )
 }
 
@@ -82,8 +89,12 @@ fun ConfigScreenContent(
     onMoveDown: (Int) -> Unit,
     onRemove: (String) -> Unit,
     onUpdateLabel: (String, String) -> Unit,
-    onAppSelected: (AppShortcut) -> Unit
+    onAppSelected: (AppShortcut) -> Unit,
+    onUpdateShowSearch: (Boolean) -> Unit,
+    onUpdateShowApps: (Boolean) -> Unit,
+    onUpdateShowDateTime: (Boolean) -> Unit
 ) {
+    var selectedTab by remember { mutableIntStateOf(0) }
     var showAddAppSheet by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -111,7 +122,7 @@ fun ConfigScreenContent(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                 )
 
-                // Simple Preview
+                // Preview Card
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -130,33 +141,70 @@ fun ConfigScreenContent(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            if (prefs.selectedApps.isEmpty()) {
+                            if (prefs.showDateTime) {
                                 Text(
-                                    text = "add your essential apps",
-                                    color = Color.LightGray
+                                    text = "Monday, Oct 24",
+                                    color = Color.Gray,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(bottom = 4.dp)
                                 )
-                            } else {
-                                prefs.selectedApps.take(3).forEach { app ->
+                            }
+                            if (prefs.showSearch) {
+                                Text(
+                                    text = "search.",
+                                    color = Color.LightGray,
+                                    modifier = Modifier.padding(vertical = 2.dp)
+                                )
+                            }
+                            if (prefs.showApps) {
+                                if (prefs.selectedApps.isEmpty()) {
                                     Text(
-                                        text = (app.customLabel ?: app.displayName).lowercase(),
-                                        color = Color.White,
-                                        modifier = Modifier.padding(vertical = 4.dp)
+                                        text = "add your essential apps",
+                                        color = Color.LightGray
                                     )
+                                } else {
+                                    prefs.selectedApps.take(3).forEach { app ->
+                                        Text(
+                                            text = (app.customLabel ?: app.displayName).lowercase(),
+                                            color = Color.White,
+                                            modifier = Modifier.padding(vertical = 2.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
+
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    divider = {}
+                ) {
+                    Tab(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        text = { Text("My Apps", fontWeight = FontWeight.Medium) }
+                    )
+                    Tab(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        text = { Text("Modules", fontWeight = FontWeight.Medium) }
+                    )
+                }
             }
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddAppSheet = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.background,
-                shape = CircleShape
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add App Shortcut")
+            if (selectedTab == 0) {
+                FloatingActionButton(
+                    onClick = { showAddAppSheet = true },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.background,
+                    shape = CircleShape
+                ) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = "Add App Shortcut")
+                }
             }
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -167,13 +215,21 @@ fun ConfigScreenContent(
                 .padding(innerPadding),
             color = MaterialTheme.colorScheme.background
         ) {
-            MyAppsTab(
-                selectedApps = prefs.selectedApps,
-                onMoveUp = onMoveUp,
-                onMoveDown = onMoveDown,
-                onRemove = onRemove,
-                onUpdateLabel = onUpdateLabel
-            )
+            when (selectedTab) {
+                0 -> MyAppsTab(
+                    selectedApps = prefs.selectedApps,
+                    onMoveUp = onMoveUp,
+                    onMoveDown = onMoveDown,
+                    onRemove = onRemove,
+                    onUpdateLabel = onUpdateLabel
+                )
+                1 -> ModulesTab(
+                    prefs = prefs,
+                    onUpdateShowSearch = onUpdateShowSearch,
+                    onUpdateShowApps = onUpdateShowApps,
+                    onUpdateShowDateTime = onUpdateShowDateTime
+                )
+            }
         }
     }
 
@@ -186,6 +242,92 @@ fun ConfigScreenContent(
                 onAppSelected(app)
                 showAddAppSheet = false
             }
+        )
+    }
+}
+
+@Composable
+fun ModulesTab(
+    prefs: WidgetPreferences,
+    onUpdateShowSearch: (Boolean) -> Unit,
+    onUpdateShowApps: (Boolean) -> Unit,
+    onUpdateShowDateTime: (Boolean) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp, vertical = 8.dp)
+    ) {
+        item {
+            Text(
+                text = "Information Modules",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    ModuleToggle(
+                        title = "Show Date & Time",
+                        subtitle = "Display the current day and time",
+                        checked = prefs.showDateTime,
+                        onCheckedChange = onUpdateShowDateTime
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    ModuleToggle(
+                        title = "Show Search",
+                        subtitle = "Quick access to system search",
+                        checked = prefs.showSearch,
+                        onCheckedChange = onUpdateShowSearch
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    ModuleToggle(
+                        title = "Show App List",
+                        subtitle = "Display your curated essential apps",
+                        checked = prefs.showApps,
+                        onCheckedChange = onUpdateShowApps
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ModuleToggle(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, style = MaterialTheme.typography.titleSmall)
+            Text(
+                text = subtitle, 
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.background,
+                checkedTrackColor = MaterialTheme.colorScheme.primary
+            )
         )
     }
 }

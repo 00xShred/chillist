@@ -11,5 +11,8 @@ data class AppShortcut(
 
 @Serializable
 data class WidgetPreferences(
-    val selectedApps: List<AppShortcut> = emptyList()
+    val selectedApps: List<AppShortcut> = emptyList(),
+    val showDateTime: Boolean = false,
+    val showSearch: Boolean = false,
+    val showApps: Boolean = true
 )

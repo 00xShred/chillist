@@ -14,6 +14,7 @@ import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.cornerRadius
+import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
@@ -28,6 +29,9 @@ import androidx.glance.text.TextStyle
 import com.codeberg.gabriel.chillist.data.AppPreferencesRepository
 import com.codeberg.gabriel.chillist.data.WidgetPreferences
 import com.codeberg.gabriel.chillist.widget.LaunchAppAction.Companion.PackageNameKey
+
+import android.widget.RemoteViews
+import com.codeberg.gabriel.chillist.R
 
 class ChillistWidget : GlanceAppWidget() {
 
@@ -52,35 +56,60 @@ class ChillistWidget : GlanceAppWidget() {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (prefs.selectedApps.isEmpty()) {
+                    if (prefs.showDateTime) {
+                        val remoteViews = RemoteViews(context.packageName, R.layout.widget_text_clock).apply {
+                            setTextColor(R.id.widget_text_clock, android.graphics.Color.WHITE)
+                            setTextViewTextSize(R.id.widget_text_clock, android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
+                        }
+                        AndroidRemoteViews(remoteViews)
+                    }
+
+                    if (prefs.showSearch) {
                         Text(
-                            text = "add apps in chillist settings",
-                            modifier = GlanceModifier.clickable(actionStartActivity(actionStartActivityIntent(context))),
+                            text = "search.",
+                            modifier = GlanceModifier
+                                .padding(vertical = 6.dp)
+                                .clickable(actionRunCallback<LaunchSearchAction>()),
                             style = TextStyle(
                                 color = androidx.glance.color.ColorProvider(Color.White),
-                                fontSize = 14.sp,
-                                fontFamily = FontFamily.SansSerif
+                                fontSize = 18.sp,
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Normal
                             )
                         )
-                    } else {
-                        prefs.selectedApps.forEach { app ->
-                            val label = app.customLabel ?: app.displayName
+                    }
+
+                    if (prefs.showApps) {
+                        if (prefs.selectedApps.isEmpty()) {
                             Text(
-                                text = label,
-                                modifier = GlanceModifier
-                                    .padding(vertical = 6.dp)
-                                    .clickable(
-                                        actionRunCallback<LaunchAppAction>(
-                                            actionParametersOf(PackageNameKey to app.packageName)
-                                        )
-                                    ),
+                                text = "add apps in chillist settings",
+                                modifier = GlanceModifier.clickable(actionStartActivity(actionStartActivityIntent(context))),
                                 style = TextStyle(
                                     color = androidx.glance.color.ColorProvider(Color.White),
-                                    fontSize = 18.sp,
-                                    fontFamily = FontFamily.SansSerif,
-                                    fontWeight = FontWeight.Normal
+                                    fontSize = 14.sp,
+                                    fontFamily = FontFamily.SansSerif
                                 )
                             )
+                        } else {
+                            prefs.selectedApps.forEach { app ->
+                                val label = app.customLabel ?: app.displayName
+                                Text(
+                                    text = label.lowercase(),
+                                    modifier = GlanceModifier
+                                        .padding(vertical = 6.dp)
+                                        .clickable(
+                                            actionRunCallback<LaunchAppAction>(
+                                                actionParametersOf(PackageNameKey to app.packageName)
+                                            )
+                                        ),
+                                    style = TextStyle(
+                                        color = androidx.glance.color.ColorProvider(Color.White),
+                                        fontSize = 18.sp,
+                                        fontFamily = FontFamily.SansSerif,
+                                        fontWeight = FontWeight.Normal
+                                    )
+                                )
+                            }
                         }
                     }
                 }
