@@ -30,6 +30,7 @@ class AppPreferencesRepository(private val context: Context) {
                 WidgetPreferences()
             }
         } else {
+            // Default setup with a few typical defaults
             WidgetPreferences()
         }
     }
@@ -50,9 +51,11 @@ class AppPreferencesRepository(private val context: Context) {
             preferences[WIDGET_PREFS_KEY] = json.encodeToString(updated)
         }
         
+        // Trigger redrawing of the Glance widget immediately
         try {
             ChillistWidget().updateAll(context)
         } catch (e: Exception) {
+            // Can fail if widget isn't placed yet
         }
     }
 }

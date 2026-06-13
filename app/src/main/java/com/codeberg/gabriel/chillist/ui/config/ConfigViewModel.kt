@@ -122,6 +122,117 @@ class ConfigViewModel(
         }
     }
 
+    fun updateFontFamily(fontFamily: String) {
+        viewModelScope.launch {
+            repository.updatePreferences { it.copy(fontFamily = fontFamily) }
+        }
+    }
+
+    fun updateFontSize(sizeSp: Int) {
+        viewModelScope.launch {
+            repository.updatePreferences { it.copy(fontSizeSp = sizeSp) }
+        }
+    }
+
+    fun updateTextCase(textCase: String) {
+        viewModelScope.launch {
+            repository.updatePreferences { it.copy(textCase = textCase) }
+        }
+    }
+
+    fun updateAlignment(alignment: String) {
+        viewModelScope.launch {
+            repository.updatePreferences { it.copy(alignment = alignment) }
+        }
+    }
+
+    fun updateVerticalSpacing(spacingDp: Int) {
+        viewModelScope.launch {
+            repository.updatePreferences { it.copy(verticalSpacingDp = spacingDp) }
+        }
+    }
+
+    fun updateTextColor(hex: String) {
+        viewModelScope.launch {
+            repository.updatePreferences { it.copy(textColorHex = hex) }
+        }
+    }
+
+    fun updateBackgroundColor(hex: String) {
+        viewModelScope.launch {
+            repository.updatePreferences { it.copy(backgroundColorHex = hex) }
+        }
+    }
+
+    fun updateBackgroundOpacity(opacity: Float) {
+        viewModelScope.launch {
+            repository.updatePreferences { it.copy(backgroundOpacity = opacity) }
+        }
+    }
+
+    fun updateUseDynamicColors(use: Boolean) {
+        viewModelScope.launch {
+            repository.updatePreferences { it.copy(useDynamicColors = use) }
+        }
+    }
+
+    fun updateThemePreset(preset: String) {
+        viewModelScope.launch {
+            repository.updatePreferences { prefs ->
+                val updatedPrefs = when (preset) {
+                    "gruvbox" -> prefs.copy(
+                        themePreset = preset,
+                        textColorHex = "#EBDBB2",
+                        backgroundColorHex = "#282828",
+                        useDynamicColors = false
+                    )
+                    "catppuccin" -> prefs.copy(
+                        themePreset = preset,
+                        textColorHex = "#CDD6F4",
+                        backgroundColorHex = "#1E1E2E",
+                        useDynamicColors = false
+                    )
+                    "tokyo-night" -> prefs.copy(
+                        themePreset = preset,
+                        textColorHex = "#C0CAF5",
+                        backgroundColorHex = "#1A1B26",
+                        useDynamicColors = false
+                    )
+                    "nord" -> prefs.copy(
+                        themePreset = preset,
+                        textColorHex = "#ECEFF4",
+                        backgroundColorHex = "#2E3440",
+                        useDynamicColors = false
+                    )
+                    "nothing" -> prefs.copy(
+                        themePreset = preset,
+                        textColorHex = "#FFFFFF",
+                        backgroundColorHex = "#000000",
+                        useDynamicColors = false,
+                        fontFamily = "nothing",
+                        showDateTime = true,
+                        showDividers = true,
+                        backgroundOpacity = 0.85f
+                    )
+                    "default" -> prefs.copy(
+                        themePreset = preset,
+                        textColorHex = "#E0E0E0",
+                        backgroundColorHex = "#000000",
+                        useDynamicColors = false
+                    )
+                    else -> prefs.copy(themePreset = preset)
+                }
+                updatedPrefs
+            }
+        }
+    }
+
+    fun updateShowDividers(show: Boolean) {
+        viewModelScope.launch {
+            repository.updatePreferences { it.copy(showDividers = show) }
+        }
+    }
+
     fun updateShowDateTime(show: Boolean) {
         viewModelScope.launch {
             repository.updatePreferences { it.copy(showDateTime = show) }
