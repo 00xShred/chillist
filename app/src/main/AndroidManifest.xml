@@ -14,5 +14,18 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Chillist">
+
+        <!-- Glance Widget Receiver -->
+        <receiver
+            android:name=".widget.ChillistWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/chillist_widget_info" />
+        </receiver>
+
     </application>
 </manifest>

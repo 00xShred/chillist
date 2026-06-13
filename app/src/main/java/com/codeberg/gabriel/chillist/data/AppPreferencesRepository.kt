@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.glance.appwidget.updateAll
+import com.codeberg.gabriel.chillist.widget.ChillistWidget
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
@@ -46,6 +48,11 @@ class AppPreferencesRepository(private val context: Context) {
             }
             val updated = transform(current)
             preferences[WIDGET_PREFS_KEY] = json.encodeToString(updated)
+        }
+        
+        try {
+            ChillistWidget().updateAll(context)
+        } catch (e: Exception) {
         }
     }
 }
