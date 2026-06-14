@@ -3,7 +3,9 @@ package com.codeberg.gabriel.chillist.ui.config
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -12,12 +14,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -76,6 +80,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.toFontFamily
+import androidx.compose.ui.res.painterResource
 import com.codeberg.gabriel.chillist.R
 import com.codeberg.gabriel.chillist.data.AppShortcut
 import com.codeberg.gabriel.chillist.data.WidgetPreferences
@@ -145,22 +150,27 @@ fun ConfigScreenContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.background)
-                    .padding(top = 16.dp)
+                    .statusBarsPadding()
+                    .padding(top = 12.dp)
             ) {
-                Text(
-                    text = "chillist.",
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.Light,
-                        letterSpacing = (-1).sp
-                    ),
-                    modifier = Modifier.padding(horizontal = 24.dp),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "chillist.",
+                        style = MaterialTheme.typography.headlineLarge.copy(
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Light,
+                            letterSpacing = (-1).sp
+                        ),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
                 Text(
                     text = "curate your essential focus space",
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 2.dp),
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                 )
 
@@ -267,152 +277,141 @@ fun ConfigScreenContent(
 fun LivePreviewCard(prefs: WidgetPreferences) {
     val isSystemDark = true // Force dark preview to match the app theme
     
-    // Simulate wallpaper background with a beautiful premium gradient
-    val previewBgBrush = Brush.verticalGradient(
-        colors = listOf(Color(0xFF1E293B), Color(0xFF0F172A))
-    )
+    val widgetOpacity = prefs.backgroundOpacity
+    val widgetBgColor = if (prefs.useDynamicColors) {
+        if (isSystemDark) Color.Black else Color.White
+    } else {
+        try {
+            Color(android.graphics.Color.parseColor(prefs.backgroundColorHex))
+        } catch (e: Exception) {
+            if (isSystemDark) Color.Black else Color.White
+        }
+    }.copy(alpha = widgetOpacity)
+
+    val font = when (prefs.fontFamily) {
+        "serif" -> FontFamily.Serif
+        "monospace" -> FontFamily.Monospace
+        "cursive" -> FontFamily.Cursive
+        "nothing" -> androidx.compose.ui.text.font.Font(R.font.ndot47).toFontFamily()
+        else -> FontFamily.SansSerif
+    }
+
+    val alignment = when (prefs.alignment) {
+        "center" -> Alignment.CenterHorizontally
+        "right" -> Alignment.End
+        else -> Alignment.Start
+    }
+
+    val textColor = if (prefs.useDynamicColors) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        try {
+            Color(android.graphics.Color.parseColor(prefs.textColorHex))
+        } catch (e: Exception) {
+            if (isSystemDark) Color.LightGray else Color.DarkGray
+        }
+    }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(24.dp)
-            .height(180.dp),
+            .padding(horizontal = 24.dp, vertical = 12.dp),
         shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        border = if (widgetOpacity > 0.05f) {
+            androidx.compose.foundation.BorderStroke(1.dp, textColor.copy(alpha = 0.15f))
+        } else {
+            androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)) // subtle outline for visibility when transparent
+        },
+        colors = CardDefaults.cardColors(containerColor = widgetBgColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Box(
+        Column(
             modifier = Modifier
-                .fillMaxSize()
-                .background(previewBgBrush)
+                .fillMaxWidth()
                 .padding(16.dp),
-            contentAlignment = Alignment.Center
+            horizontalAlignment = alignment,
+            verticalArrangement = Arrangement.Center
         ) {
-            // Widget representation
-            val widgetOpacity = prefs.backgroundOpacity
-            val widgetBgColor = if (prefs.useDynamicColors) {
-                if (isSystemDark) Color.Black else Color.White
-            } else {
-                try {
-                    Color(android.graphics.Color.parseColor(prefs.backgroundColorHex))
-                } catch (e: Exception) {
-                    if (isSystemDark) Color.Black else Color.White
-                }
-            }.copy(alpha = widgetOpacity)
-
-            val font = when (prefs.fontFamily) {
-                "serif" -> FontFamily.Serif
-                "monospace" -> FontFamily.Monospace
-                "cursive" -> FontFamily.Cursive
-                "nothing" -> androidx.compose.ui.text.font.Font(R.font.ndot47).toFontFamily()
-                else -> FontFamily.SansSerif
+            if (prefs.showDateTime) {
+                Text(
+                    text = "Monday, Oct 24",
+                    style = TextStyle(
+                        color = textColor.copy(alpha = 0.7f),
+                        fontSize = (prefs.fontSizeSp - 4).sp,
+                        fontFamily = font
+                    ),
+                    modifier = Modifier.padding(bottom = (prefs.verticalSpacingDp / 2).dp)
+                )
             }
 
-            val alignment = when (prefs.alignment) {
-                "center" -> Alignment.CenterHorizontally
-                "right" -> Alignment.End
-                else -> Alignment.Start
-            }
-
-            val textColor = if (prefs.useDynamicColors) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                try {
-                    Color(android.graphics.Color.parseColor(prefs.textColorHex))
-                } catch (e: Exception) {
-                    if (isSystemDark) Color.LightGray else Color.DarkGray
+            if (prefs.showSearch) {
+                Text(
+                    text = "search...",
+                    style = TextStyle(
+                        color = textColor.copy(alpha = 0.5f),
+                        fontSize = prefs.fontSizeSp.sp,
+                        fontFamily = font
+                    ),
+                    modifier = Modifier.padding(vertical = (prefs.verticalSpacingDp / 2).dp)
+                )
+                if (prefs.showDividers && prefs.showApps && prefs.selectedApps.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .width(50.dp)
+                            .height(1.dp)
+                            .background(textColor.copy(alpha = 0.2f))
+                            .padding(bottom = (prefs.verticalSpacingDp / 2).dp)
+                    )
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(widgetBgColor)
-                    .padding(8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = alignment,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    if (prefs.showDateTime) {
-                        Text(
-                            text = "Monday, Oct 24",
-                            style = TextStyle(
-                                color = textColor.copy(alpha = 0.6f),
-                                fontSize = (prefs.fontSizeSp - 4).sp,
-                                fontFamily = font
-                            ),
-                            modifier = Modifier.padding(bottom = (prefs.verticalSpacingDp / 2).dp)
+            if (prefs.showApps) {
+                if (prefs.selectedApps.isEmpty()) {
+                    Text(
+                        text = "add essential apps",
+                        style = TextStyle(
+                            color = textColor.copy(alpha = 0.5f),
+                            fontSize = prefs.fontSizeSp.sp,
+                            fontFamily = font
                         )
-                    }
+                    )
+                } else {
+                    prefs.selectedApps.take(3).forEachIndexed { index, app ->
+                        val label = app.customLabel ?: app.displayName
+                        val displayTitle = when (prefs.textCase) {
+                            "lowercase" -> label.lowercase()
+                            "uppercase" -> label.uppercase()
+                            else -> label
+                        }
 
-                    if (prefs.showSearch) {
                         Text(
-                            text = "search...",
+                            text = displayTitle,
+                            modifier = Modifier.padding(vertical = (prefs.verticalSpacingDp / 2).dp),
                             style = TextStyle(
-                                color = textColor.copy(alpha = 0.4f),
+                                color = textColor,
                                 fontSize = prefs.fontSizeSp.sp,
                                 fontFamily = font
-                            ),
-                            modifier = Modifier.padding(vertical = (prefs.verticalSpacingDp / 2).dp)
+                            )
                         )
-                        if (prefs.showDividers) {
+
+                        if (prefs.showDividers && index < 2 && index < prefs.selectedApps.lastIndex) {
                             Box(
                                 modifier = Modifier
-                                    .width(40.dp)
+                                    .width(50.dp)
                                     .height(1.dp)
                                     .background(textColor.copy(alpha = 0.2f))
-                                    .padding(bottom = (prefs.verticalSpacingDp / 2).dp)
                             )
                         }
                     }
-
-                    if (prefs.showApps) {
-                        if (prefs.selectedApps.isEmpty()) {
-                            Text(
-                                text = "add your essential apps",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = textColor.copy(alpha = 0.5f),
-                                    fontFamily = font
-                                )
+                    if (prefs.selectedApps.size > 3) {
+                        Text(
+                            text = "...",
+                            style = TextStyle(
+                                color = textColor.copy(alpha = 0.7f),
+                                fontSize = prefs.fontSizeSp.sp,
+                                fontFamily = font
                             )
-                        } else {
-                            prefs.selectedApps.take(3).forEachIndexed { index, app ->
-                                val label = app.customLabel ?: app.displayName
-                                val displayTitle = when (prefs.textCase) {
-                                    "lowercase" -> label.lowercase()
-                                    "uppercase" -> label.uppercase()
-                                    else -> label
-                                }
-
-                                Text(
-                                    text = displayTitle,
-                                    modifier = Modifier.padding(vertical = (prefs.verticalSpacingDp / 2).dp),
-                                    style = TextStyle(
-                                        color = textColor,
-                                        fontSize = prefs.fontSizeSp.sp,
-                                        fontFamily = font
-                                    )
-                                )
-
-                                if (prefs.showDividers && index < 2 && index < prefs.selectedApps.lastIndex) {
-                                    Box(
-                                        modifier = Modifier
-                                            .width(40.dp)
-                                            .height(1.dp)
-                                            .background(textColor.copy(alpha = 0.2f))
-                                    )
-                                }
-                            }
-                            if (prefs.selectedApps.size > 3) {
-                                Text(
-                                    text = "...",
-                                    style = TextStyle(color = textColor, fontSize = prefs.fontSizeSp.sp)
-                                )
-                            }
-                        }
+                        )
                     }
                 }
             }
@@ -742,8 +741,8 @@ fun AestheticsTab(
                     Slider(
                         value = prefs.fontSizeSp.toFloat(),
                         onValueChange = { onUpdateFontSize(it.toInt()) },
-                        valueRange = 12f..32f,
-                        steps = 20,
+                        valueRange = 12f..64f,
+                        steps = 52,
                         colors = SliderDefaults.colors(
                             thumbColor = MaterialTheme.colorScheme.primary,
                             activeTrackColor = MaterialTheme.colorScheme.primary
@@ -795,8 +794,8 @@ fun AestheticsTab(
                     Slider(
                         value = prefs.verticalSpacingDp.toFloat(),
                         onValueChange = { onUpdateVerticalSpacing(it.toInt()) },
-                        valueRange = 4f..32f,
-                        steps = 28,
+                        valueRange = 4f..64f,
+                        steps = 60,
                         colors = SliderDefaults.colors(
                             thumbColor = MaterialTheme.colorScheme.primary,
                             activeTrackColor = MaterialTheme.colorScheme.primary
