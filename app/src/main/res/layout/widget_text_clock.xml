@@ -12,6 +12,5 @@
         android:format12Hour="EEEE, MMM d"
         android:format24Hour="EEEE, MMM d"
         android:textColor="#FFFFFF"
-        android:fontFamily="@font/ndot47"
         android:textSize="14sp" />
 </LinearLayout>

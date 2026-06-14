@@ -35,6 +35,12 @@ import com.codeberg.gabriel.chillist.widget.LaunchAppAction.Companion.PackageNam
 
 import android.widget.RemoteViews
 import com.codeberg.gabriel.chillist.R
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import androidx.core.content.res.ResourcesCompat
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 
 class ChillistWidget : GlanceAppWidget() {
 
@@ -112,33 +118,59 @@ class ChillistWidget : GlanceAppWidget() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (prefs.showDateTime) {
-                        val layoutRes = if (prefs.fontFamily == "nothing") R.layout.widget_nothing_clock else R.layout.widget_text_clock
-                        val remoteViews = RemoteViews(context.packageName, layoutRes).apply {
+                        if (prefs.fontFamily == "nothing") {
+                            val sdf = java.text.SimpleDateFormat("EEEE, MMM d", java.util.Locale.getDefault())
+                            val dateText = sdf.format(java.util.Date())
                             val colorInt = try {
-                                android.graphics.Color.parseColor(prefs.textColorHex)
+                                val colorHex = if (prefs.textColorHex.startsWith("#")) prefs.textColorHex else "#${prefs.textColorHex}"
+                                android.graphics.Color.parseColor(colorHex)
                             } catch (e: Exception) {
                                 android.graphics.Color.WHITE
                             }
-                            setTextColor(R.id.widget_text_clock, colorInt)
-                            setTextViewTextSize(R.id.widget_text_clock, android.util.TypedValue.COMPLEX_UNIT_SP, (prefs.fontSizeSp - 4).toFloat())
+                            val bitmap = textToBitmap(
+                                context = context,
+                                text = dateText,
+                                fontSizeSp = (prefs.fontSizeSp - 4).toFloat(),
+                                textColor = colorInt
+                            )
+                            Image(
+                                provider = ImageProvider(bitmap),
+                                contentDescription = dateText,
+                                modifier = GlanceModifier.padding(vertical = (prefs.verticalSpacingDp / 2).dp)
+                            )
+                        } else {
+                            val layoutRes = R.layout.widget_text_clock
+                            val remoteViews = RemoteViews(context.packageName, layoutRes).apply {
+                                val colorInt = try {
+                                    val colorHex = if (prefs.textColorHex.startsWith("#")) prefs.textColorHex else "#${prefs.textColorHex}"
+                                    android.graphics.Color.parseColor(colorHex)
+                                } catch (e: Exception) {
+                                    android.graphics.Color.WHITE
+                                }
+                                setTextColor(R.id.widget_text_clock, colorInt)
+                                setTextViewTextSize(R.id.widget_text_clock, android.util.TypedValue.COMPLEX_UNIT_SP, (prefs.fontSizeSp - 4).toFloat())
+                            }
+                            AndroidRemoteViews(remoteViews)
                         }
-                        AndroidRemoteViews(remoteViews)
                     }
 
                     if (prefs.showSearch) {
                         if (prefs.fontFamily == "nothing") {
-                            val remoteViews = RemoteViews(context.packageName, R.layout.widget_nothing_item).apply {
-                                val colorInt = try {
-                                    android.graphics.Color.parseColor(prefs.textColorHex)
-                                } catch (e: Exception) {
-                                    android.graphics.Color.WHITE
-                                }
-                                setTextColor(R.id.widget_text_item_view, colorInt)
-                                setTextViewTextSize(R.id.widget_text_item_view, android.util.TypedValue.COMPLEX_UNIT_SP, prefs.fontSizeSp.toFloat())
-                                setTextViewText(R.id.widget_text_item_view, "search.")
+                            val colorInt = try {
+                                val colorHex = if (prefs.textColorHex.startsWith("#")) prefs.textColorHex else "#${prefs.textColorHex}"
+                                android.graphics.Color.parseColor(colorHex)
+                            } catch (e: Exception) {
+                                android.graphics.Color.WHITE
                             }
-                            AndroidRemoteViews(
-                                remoteViews,
+                            val bitmap = textToBitmap(
+                                context = context,
+                                text = "search.",
+                                fontSizeSp = prefs.fontSizeSp.toFloat(),
+                                textColor = colorInt
+                            )
+                            Image(
+                                provider = ImageProvider(bitmap),
+                                contentDescription = "search.",
                                 modifier = GlanceModifier
                                     .padding(vertical = (prefs.verticalSpacingDp / 2).dp)
                                     .clickable(actionRunCallback<LaunchSearchAction>())
@@ -189,18 +221,21 @@ class ChillistWidget : GlanceAppWidget() {
                                 }
 
                                 if (prefs.fontFamily == "nothing") {
-                                    val remoteViews = RemoteViews(context.packageName, R.layout.widget_nothing_item).apply {
-                                        val colorInt = try {
-                                            android.graphics.Color.parseColor(prefs.textColorHex)
-                                        } catch (e: Exception) {
-                                            android.graphics.Color.WHITE
-                                        }
-                                        setTextColor(R.id.widget_text_item_view, colorInt)
-                                        setTextViewTextSize(R.id.widget_text_item_view, android.util.TypedValue.COMPLEX_UNIT_SP, prefs.fontSizeSp.toFloat())
-                                        setTextViewText(R.id.widget_text_item_view, displayTitle)
+                                    val colorInt = try {
+                                        val colorHex = if (prefs.textColorHex.startsWith("#")) prefs.textColorHex else "#${prefs.textColorHex}"
+                                        android.graphics.Color.parseColor(colorHex)
+                                    } catch (e: Exception) {
+                                        android.graphics.Color.WHITE
                                     }
-                                    AndroidRemoteViews(
-                                        remoteViews,
+                                    val bitmap = textToBitmap(
+                                        context = context,
+                                        text = displayTitle,
+                                        fontSizeSp = prefs.fontSizeSp.toFloat(),
+                                        textColor = colorInt
+                                    )
+                                    Image(
+                                        provider = ImageProvider(bitmap),
+                                        contentDescription = displayTitle,
                                         modifier = GlanceModifier
                                             .padding(vertical = (prefs.verticalSpacingDp / 2).dp)
                                             .clickable(
@@ -243,6 +278,38 @@ class ChillistWidget : GlanceAppWidget() {
                 }
             }
         }
+    }
+
+    private fun textToBitmap(
+        context: Context,
+        text: String,
+        fontSizeSp: Float,
+        textColor: Int
+    ): Bitmap {
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = android.util.TypedValue.applyDimension(
+                android.util.TypedValue.COMPLEX_UNIT_SP,
+                fontSizeSp,
+                context.resources.displayMetrics
+            )
+            color = textColor
+            try {
+                typeface = ResourcesCompat.getFont(context, R.font.ndot47)
+            } catch (e: Exception) {
+                typeface = android.graphics.Typeface.MONOSPACE
+            }
+            textAlign = Paint.Align.LEFT
+        }
+
+        val fm = paint.fontMetricsInt
+        val height = (fm.bottom - fm.top).coerceAtLeast(1)
+        val baseline = -fm.top
+
+        val width = (paint.measureText(text) + 0.5f).toInt().coerceAtLeast(1) + 4
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawText(text, 2f, baseline.toFloat(), paint)
+        return bitmap
     }
 
     // Helper to get intent to launch setup screen
