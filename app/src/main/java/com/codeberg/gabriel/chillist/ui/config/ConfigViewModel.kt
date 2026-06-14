@@ -207,7 +207,7 @@ class ConfigViewModel(
                     "nothing" -> prefs.copy(
                         themePreset = preset,
                         textColorHex = "#FFFFFF",
-                        backgroundColorHex = "#000000",
+                        backgroundColorHex = "#151515",
                         useDynamicColors = false,
                         fontFamily = "nothing",
                         showDateTime = true,

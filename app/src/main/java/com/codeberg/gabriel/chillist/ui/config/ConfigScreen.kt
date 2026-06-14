@@ -22,6 +22,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -61,6 +65,7 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -69,6 +74,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -116,7 +122,7 @@ fun ConfigScreen(viewModel: ConfigViewModel) {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ConfigScreenContent(
     prefs: WidgetPreferences,
@@ -143,6 +149,7 @@ fun ConfigScreenContent(
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     var showAddAppSheet by remember { mutableStateOf(false) }
+    val isKeyboardVisible = WindowInsets.isImeVisible
 
     Scaffold(
         topBar = {
@@ -175,7 +182,13 @@ fun ConfigScreenContent(
                 )
 
                 // Live Preview Card
-                LivePreviewCard(prefs = prefs)
+                AnimatedVisibility(
+                    visible = !isKeyboardVisible,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    LivePreviewCard(prefs = prefs)
+                }
 
                 TabRow(
                     selectedTabIndex = selectedTab,
@@ -661,10 +674,29 @@ fun AestheticsTab(
     onUpdateShowDividers: (Boolean) -> Unit,
     onUpdateShowDateTime: (Boolean) -> Unit
 ) {
+    var isTextColorFocused by remember { mutableStateOf(false) }
+    var textColorText by remember { mutableStateOf(prefs.textColorHex) }
+
+    LaunchedEffect(prefs.textColorHex) {
+        if (!isTextColorFocused) {
+            textColorText = prefs.textColorHex
+        }
+    }
+
+    var isBgColorFocused by remember { mutableStateOf(false) }
+    var bgColorText by remember { mutableStateOf(prefs.backgroundColorHex) }
+
+    LaunchedEffect(prefs.backgroundColorHex) {
+        if (!isBgColorFocused) {
+            bgColorText = prefs.backgroundColorHex
+        }
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 24.dp, vertical = 8.dp)
+            .imePadding()
     ) {
         item {
             ConfigHeader(title = "Typography")
@@ -923,15 +955,23 @@ fun AestheticsTab(
                                 isDark = true
                             )
                             OutlinedTextField(
-                                value = prefs.textColorHex,
-                                onValueChange = { if (it.length <= 7) onUpdateTextColor(it) },
+                                value = textColorText,
+                                onValueChange = { input ->
+                                    if (input.length <= 7) {
+                                        textColorText = input
+                                        onUpdateTextColor(input)
+                                    }
+                                },
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                                     unfocusedBorderColor = MaterialTheme.colorScheme.outline
                                 ),
-                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp)
+                                    .onFocusChanged { isTextColorFocused = it.isFocused }
                             )
 
                             Spacer(modifier = Modifier.height(16.dp))
@@ -944,15 +984,23 @@ fun AestheticsTab(
                                 isDark = false
                             )
                             OutlinedTextField(
-                                value = prefs.backgroundColorHex,
-                                onValueChange = { if (it.length <= 7) onUpdateBackgroundColor(it) },
+                                value = bgColorText,
+                                onValueChange = { input ->
+                                    if (input.length <= 7) {
+                                        bgColorText = input
+                                        onUpdateBackgroundColor(input)
+                                    }
+                                },
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                                     unfocusedBorderColor = MaterialTheme.colorScheme.outline
                                 ),
-                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp)
+                                    .onFocusChanged { isBgColorFocused = it.isFocused }
                             )
                         }
                     }
