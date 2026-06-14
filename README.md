@@ -2,7 +2,13 @@
 
 just a chill, text-based launcher widget for android. replaces your cluttered app grid with a clean list of apps.
 
-![preview](example.png)
+<p align="center">
+  <img src="./example.png" width="210" alt="chillist example 1" />
+  &nbsp;&nbsp;
+  <img src="./example2.png" width="210" alt="chillist example 2" />
+  &nbsp;&nbsp;
+  <img src="./example3.png" width="210" alt="chillist example 3" />
+</p>
 
 ## features
 
