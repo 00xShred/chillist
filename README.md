@@ -1,6 +1,6 @@
 # chillist
 
-just a chill, text-based launcher widget for android. replaces your cluttered app grid with a clean list of apps.
+Minimal text-based launcher widget for Android. Replaces app grids with a clean list.
 
 <p align="center">
   <img src="./example.png" width="210" alt="chillist example 1" />
@@ -23,6 +23,6 @@ just a chill, text-based launcher widget for android. replaces your cluttered ap
 ## build
 
 1. clone the repo:
-   `git clone https://codeberg.org/gabriel/chillist.git`
+   `git clone https://codeberg.org/0xShred/chillist.git`
 2. run `./gradlew clean installDebug`
 3. add the widget to your home screen
